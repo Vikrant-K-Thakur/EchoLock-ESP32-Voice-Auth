@@ -1,0 +1,19 @@
+.vscode/
+.vscode/*
+.pio/
+.pio/*
+/.pioenvs/
+/libdeps/
+build/
+*.bin
+*.elf
+*.map
+
+# Mac / Linux / Windows
+.DS_Store
+Thumbs.db
+
+# Python envs
+__pycache__/
+.env/
+venv/
