@@ -62,7 +62,7 @@ private:
         float x1, x2, y1, y2;
         Biquad();
         void reset();
-        void setCoeffs(float B0, float B1, float B2, float A0, float A1, float A2);
+        void setCoeffs(float b0_coeff, float b1_coeff, float b2_coeff, float a0_coeff, float a1_coeff, float a2_coeff);
         float processSample(float x);
         void copyStateFrom(const Biquad& other);
     };

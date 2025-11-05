@@ -1,8 +1,9 @@
 #include <Arduino.h>
-#include "driver/i2s.h"
+#include "i2s_interface.h"
 #include "authentication.h"
 #include "adaptive_filter.h"
-#include "noise_analysis.h" // We need the analyzer for a complete demo
+#include "noise_analysis.h"
+#include "ui_feedback.h"
 
 // --- I2S Pin Configuration ---
 #define I2S_WS      25   // LRCL (Word Select)
@@ -22,39 +23,17 @@ FilterConfig filterCfg; // Configuration for the filter
 
 // --- Initialize I2S ---
 void setup_i2s() {
-    i2s_config_t i2s_config = {
-        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-        // CRITICAL FIX: The INMP441 raw capture is 32-bit (24-bit data MSB-aligned)
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT, 
-        .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-        .communication_format = (i2s_comm_format_t)I2S_COMM_FORMAT_I2S,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-        .dma_buf_count = 4,
-        .dma_buf_len = 512,
-        .use_apll = false,
-        .tx_desc_auto_clear = false,
-        .fixed_mclk = 0
-    };
-
-    i2s_pin_config_t pin_config = {
-        .bck_io_num = I2S_SCK,
-        .ws_io_num = I2S_WS,
-        .data_out_num = -1,    // Only RX
-        .data_in_num = I2S_SD
-    };
-
-    // Install and configure I2S
-    if (i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL) != ESP_OK) {
-        Serial.println("❌ I2S driver install failed!");
+    if (!I2SInterface::init()) {
+        Serial.println("❌ I2S initialization failed!");
         while (1);
     }
-    if (i2s_set_pin(I2S_PORT, &pin_config) != ESP_OK) {
-        Serial.println("❌ I2S pin config failed!");
-        while (1);
-    }
-    i2s_zero_dma_buffer(I2S_PORT);
     Serial.println("✅ I2S initialized successfully");
+}
+
+// Helper function to constrain values
+template <typename T>
+T constrain_val(T val, T min_val, T max_val) {
+    return (val < min_val) ? min_val : (val > max_val) ? max_val : val;
 }
 
 // --- Simulated Audio Capture (since real mic not connected) ---
@@ -64,7 +43,7 @@ void capture_audio_data(int16_t *buffer, size_t count, bool isNoisy = false) {
             // Simulate speech in heavy, high-frequency noise
             float speech = 5000 * sin(2 * PI * i / 20);
             float noise = 2000 * sin(2 * PI * i / 5 + random(-500, 500)); // High freq noise
-            buffer[i] = (int16_t)clamp_value(speech + noise, -32768.0f, 32767.0f);
+            buffer[i] = (int16_t)constrain_val(speech + noise, -32768.0f, 32767.0f);
         } else {
             // Simulate clean speech
             buffer[i] = (int16_t)(8000 * sin(2 * PI * i / 30) + random(-50, 50)); 
@@ -82,6 +61,7 @@ void setup() {
 
     setup_i2s();
     auth_init();
+    UIFeedback::init();
     noiseAnalyzer.init(SAMPLE_RATE, DEMO_FRAME_SIZE);
     
     // Configure and initialize adaptive filter

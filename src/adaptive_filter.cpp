@@ -31,15 +31,15 @@ void AdaptiveFilter::Biquad::reset() {
     x1 = x2 = y1 = y2 = 0.0f;
 }
 
-void AdaptiveFilter::Biquad::setCoeffs(float B0, float B1, float B2, float A0, float A1, float A2) {
-    // Normalize coefficients by A0
-    if (fabs(A0) < 1e-9f) A0 = 1.0f;
-    b0 = B0 / A0;
-    b1 = B1 / A0;
-    b2 = B2 / A0;
+void AdaptiveFilter::Biquad::setCoeffs(float b0_coeff, float b1_coeff, float b2_coeff, float a0_coeff, float a1_coeff, float a2_coeff) {
+    // Normalize coefficients by a0_coeff
+    if (fabs(a0_coeff) < 1e-9f) a0_coeff = 1.0f;
+    b0 = b0_coeff / a0_coeff;
+    b1 = b1_coeff / a0_coeff;
+    b2 = b2_coeff / a0_coeff;
     a0 = 1.0f;
-    a1 = A1 / A0;
-    a2 = A2 / A0;
+    a1 = a1_coeff / a0_coeff;
+    a2 = a2_coeff / a0_coeff;
 }
 
 float AdaptiveFilter::Biquad::processSample(float x) {
