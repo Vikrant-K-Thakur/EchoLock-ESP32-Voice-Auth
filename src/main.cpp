@@ -21,6 +21,10 @@ NoiseAnalyzer noiseAnalyzer;
 AdaptiveFilter adaptiveFilter;
 FilterConfig filterCfg; // Configuration for the filter
 
+// Forward declarations
+void onShortPress();
+void onLongPress();
+
 // --- Initialize I2S ---
 void setup_i2s() {
     if (!I2SInterface::init()) {
@@ -115,5 +119,71 @@ void setup() {
 }
 
 void loop() {
-    // Nothing to do here
+    // Real-time voice testing loop
+    UIFeedback::loopPoll(onShortPress, onLongPress);
+    delay(50);
+}
+
+// Button callbacks for real testing
+void onShortPress() {
+    Serial.println("\n[USER] Short press - Starting Authentication...");
+    UIFeedback::indicateListening();
+    
+    int16_t audioBuffer[DEMO_FRAME_SIZE];
+    
+    // Capture real audio from microphone
+    size_t samplesRead = I2SInterface::readSamples(audioBuffer, DEMO_FRAME_SIZE);
+    
+    if (samplesRead > 0) {
+        UIFeedback::indicateAnalyzing();
+        
+        // Process with adaptive filter
+        NoiseMetrics metrics = noiseAnalyzer.analyze(audioBuffer, samplesRead);
+        adaptiveFilter.updateFromNoiseMetrics(metrics);
+        
+        int16_t filteredAudio[DEMO_FRAME_SIZE];
+        adaptiveFilter.processFrame(audioBuffer, filteredAudio);
+        
+        // Authenticate
+        auto features = extractFeatures(filteredAudio, samplesRead);
+        String matchedUser;
+        bool authenticated = authenticateUser(features, matchedUser);
+        
+        if (authenticated) {
+            UIFeedback::indicateAccessGranted();
+            Serial.println("✅ Access Granted: " + matchedUser);
+        } else {
+            UIFeedback::indicateAccessDenied();
+            Serial.println("❌ Access Denied");
+        }
+        
+        delay(2000);
+        UIFeedback::resetSystem();
+    }
+}
+
+void onLongPress() {
+    Serial.println("\n[USER] Long press - Starting Enrollment...");
+    UIFeedback::indicateEnrollStart();
+    
+    int16_t audioBuffer[DEMO_FRAME_SIZE];
+    
+    // Capture enrollment audio
+    size_t samplesRead = I2SInterface::readSamples(audioBuffer, DEMO_FRAME_SIZE);
+    
+    if (samplesRead > 0) {
+        auto features = extractFeatures(audioBuffer, samplesRead);
+        bool enrolled = enrollUser("User1", features);
+        
+        if (enrolled) {
+            UIFeedback::indicateEnrollDone();
+            Serial.println("✅ User enrolled successfully");
+        } else {
+            UIFeedback::indicateAccessDenied();
+            Serial.println("❌ Enrollment failed");
+        }
+        
+        delay(2000);
+        UIFeedback::resetSystem();
+    }
 }
