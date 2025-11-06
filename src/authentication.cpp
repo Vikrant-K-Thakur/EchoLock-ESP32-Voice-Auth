@@ -38,15 +38,10 @@ std::vector<float> extractFeatures(const int16_t *audioData, size_t length) {
 }
 
 bool enrollUser(const String &username, const std::vector<float> &features) {
-    for (auto &u : userDB) {
-        // If username exists, check if features are similar before overwriting/rejecting
-        if (u.username == username) {
-            Serial.println("[AUTH] User already enrolled, rejecting new enrollment.");
-            return false;
-        }
-    }
-
-    // Use u.features for generic name consistent with the struct update
+    // Clear existing users for re-enrollment
+    userDB.clear();
+    
+    // Add new user
     userDB.push_back({username, features}); 
     Serial.println("[AUTH] Enrolled user: " + username + " (Features size: " + String(features.size()) + ")");
     return true;

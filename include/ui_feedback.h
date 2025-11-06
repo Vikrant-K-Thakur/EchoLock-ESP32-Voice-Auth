@@ -20,6 +20,7 @@ public:
     static void indicateAccessDenied();
     static void indicateEnrollStart();
     static void indicateEnrollDone();
+    static void indicateEnrollFailed();
     static void resetSystem();
 };
 

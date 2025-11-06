@@ -148,6 +148,14 @@ void UIFeedback::indicateAccessDenied() {
     digitalWrite(YELLOW_LED, LOW);
 }
 
+void UIFeedback::indicateEnrollFailed() {
+    showMessage("Voice Not Saved");
+    Serial.println("{\"state\":\"ENROLL_FAIL\"}");
+    digitalWrite(GREEN_LED, LOW);
+    digitalWrite(RED_LED, HIGH);
+    digitalWrite(YELLOW_LED, LOW);
+}
+
 void UIFeedback::indicateEnrollStart() {
     showMessage("Voice Enrollment...");
     Serial.println("{\"state\":\"ENROLL\"}");
